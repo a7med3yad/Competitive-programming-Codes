@@ -1,0 +1,91 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int LOG = 18;
+const int N = 1e5 + 5;
+
+vector<vector<int> > adj;
+int depth[N];
+int ances[LOG][N];
+
+void init(int n) {
+    adj.assign(n, {});
+    fill(depth, depth + n, 0);
+    for (int i = 0; i < LOG; i++)
+        fill(ances[i], ances[i] + n, -1);
+}
+
+void dfs(int u, int p = -1, int d = 0) {
+    depth[u] = d;
+    ances[0][u] = p;
+    for (int i = 1; i < LOG; i++) {
+        if (ances[i - 1][u] == -1) break;
+        ances[i][u] = ances[i - 1][ances[i - 1][u]];
+    }
+    for (int v: adj[u]) {
+        if (v == p) continue;
+        dfs(v, u, d + 1);
+    }
+}
+
+int kth_ancestor(int u, int k) {
+    for (int i = 0; i < LOG; i++) {
+        if (k & (1 << i)) {
+            u = ances[i][u];
+            if (u == -1) break;
+        }
+    }
+    return u;
+}
+
+int get_LCA(int u, int v) {
+    if (depth[u] < depth[v]) swap(u, v);
+    u = kth_ancestor(u, depth[u] - depth[v]);
+    if (u == v) return u;
+    for (int i = LOG - 1; i >= 0; i--) {
+        if (ances[i][u] != -1 && ances[i][u] != ances[i][v]) {
+            u = ances[i][u];
+            v = ances[i][v];
+        }
+    }
+    return ances[0][u];
+}
+
+void solve() {
+    int n;
+    cin >> n;
+
+    init(n + 1);
+
+    for (int i = 1; i <= n; i++) {
+        int m;
+        cin >> m;
+        while (m--) {
+            int x;
+            cin >> x;
+            adj[i].push_back(x);
+            adj[x].push_back(i);
+        }
+    }
+
+    dfs(1);
+
+    int q;
+    cin >> q;
+    while (q--) {
+        int u, v;
+        cin >> u >> v;
+        cout << get_LCA(u, v) << '\n';
+    }
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+#ifndef ONLINE_JUDGE
+    freopen("input.in", "r", stdin);
+    freopen("output.out", "w", stdout);
+#endif
+    solve();
+    return 0;
+}
